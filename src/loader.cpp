@@ -38,6 +38,8 @@ void Loader::parse_instance(const std::string& file_path)
         exit(EXIT_FAILURE);
     }
 
+    currently_read_line = 0;
+
     while (getline(input_stream, read_line)) {
         if (currently_read_line < 2)
             parse_header(read_line);
@@ -48,11 +50,39 @@ void Loader::parse_instance(const std::string& file_path)
     }
 }
 
+void Loader::get_candidate_path(
+    const std::size_t source_id,
+    const std::size_t destination_id,
+    const std::size_t path_number)
+{
+    std::string read_line;
+    std::ifstream input_stream;
+    input_stream.open("./instances/POL12/pol12.pat");
+
+    if(!input_stream.is_open()) {
+        perror("Error opening file");
+        exit(EXIT_FAILURE);
+    }
+
+    const std::size_t destination_number {source_id < destination_id ? destination_id - 1 : destination_id};
+    const std::size_t vertices_multiplier {(source_id * (model_ref.model_params.vertices - 1)) + destination_number};
+    const std::size_t path_target_line {1 + (30 * vertices_multiplier) + path_number};
+
+    std::cout << "\nTARGET LINE: " << path_target_line;
+
+    currently_read_line = 0;
+
+    while (currently_read_line != path_target_line && getline(input_stream, read_line))
+        currently_read_line++;
+
+    std::cout << "\nREAD LINE: " << read_line;
+}
+
 void Loader::parse_header(const std::string& read_line)
 {
     const auto tokens {tokenize(read_line, ' ')};
 
-      const auto delimiter_pos {read_line.find('\t')};
+    const auto delimiter_pos {read_line.find('\t')};
     const auto value {read_line.substr(delimiter_pos + 1, std::string::npos)};
 
     switch (currently_read_line) {

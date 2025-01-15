@@ -11,6 +11,13 @@ void Model::load_file(const std::string& file_path)
     loader.parse_instance(file_path);
 }
 
+void Model::get_path_between_vertices(
+    const std::size_t source_id,
+    const std::size_t destination_id)
+{
+    loader.get_candidate_path(source_id, destination_id, 30);
+}
+
 void Model::create_base_graph()
 {
     base_graph = std::make_unique<Graph>(model_params.vertices, model_params.edges);

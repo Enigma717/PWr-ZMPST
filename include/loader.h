@@ -11,6 +11,10 @@ public:
     Loader(Model& model_ref);
 
     void parse_instance(const std::string& file_path);
+    void get_candidate_path(
+        const std::size_t source_id,
+        const std::size_t destination_id,
+        const std::size_t path_number);
 
 private:
     void parse_header(const std::string& read_line);

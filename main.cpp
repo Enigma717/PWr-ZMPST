@@ -23,6 +23,9 @@ int main(int argc, char* argv[])
     const auto& edges {model.base_graph->edges};
     std::cout << edges;
 
+    std::cout << "\n\n========[ Path ]========\n\n";
+    model.get_path_between_vertices(3, 1);
+
     std::cout << "\n\n==============================\n\n";
     std::cout << model.base_graph->print_edges_for_vertices();
 
