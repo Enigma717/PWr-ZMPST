@@ -1,8 +1,10 @@
 #pragma once
 
-#include "./graph.h"
-#include "./vertex.h"
+#include "graph.h"
+#include "vertex.h"
+#include "structs/demand.h"
 
+#include <iomanip>
 #include <ostream>
 #include <set>
 #include <vector>
@@ -19,6 +21,16 @@ inline std::ostream& operator<<(std::ostream& stream, const Edge& edge)
     stream << "(s:" << *edge.source
            << ", d:" << *edge.destination
            << ", w:" << edge.weight << ")";
+
+    return stream;
+}
+
+inline std::ostream& operator<<(std::ostream& stream, const Demand& demand)
+{
+    stream << "[s:" << demand.source_id
+           << ", d:" << demand.destination_id
+           << std::setprecision(10)
+           << ", b:" << demand.bitrate << "]";
 
     return stream;
 }

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "./vertex.h"
-#include "./edge.h"
+#include "vertex.h"
+#include "edge.h"
 
 #include <cstdint>
 #include <vector>
