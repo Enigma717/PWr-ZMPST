@@ -2,8 +2,12 @@
 
 #include <array>
 #include <cstdint>
+#include <vector>
 
 class Vertex;
+class Channel;
+
+using SpectrumSlots = std::array<bool, 320>;
 
 class Edge {
 public:
@@ -14,5 +18,7 @@ public:
     Vertex* source;
     Vertex* destination;
     std::size_t weight {0uz};
-    std::array<bool, 320> spectrum_slots;
+    double bitrate {0.0};
+    SpectrumSlots spectrum_slots {};
+    std::vector<Channel*> assigned_channels {};
 };

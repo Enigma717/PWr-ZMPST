@@ -1,6 +1,6 @@
-#include "../include/loader.h"
-#include "../include/model.h"
-#include "../include/structs/demand.h"
+#include "loader.h"
+#include "model.h"
+#include "structs/demand.h"
 
 #include <algorithm>
 #include <format>
@@ -13,6 +13,7 @@
 namespace
 {
     std::size_t header_offset {1uz};
+    std::size_t default_route_number {1uz};
     std::size_t possible_paths {30uz};
 
     std::vector<std::string> tokenize(const std::string& string, const char delimiter)
@@ -59,7 +60,7 @@ void Loader::parse_instance(const std::string& instance_path)
     }
 }
 
-std::vector<std::size_t> Loader::get_candidate_path(
+std::vector<std::size_t> Loader::get_candidate_route(
     const std::size_t source_id,
     const std::size_t destination_id,
     const std::size_t path_number)
@@ -99,8 +100,7 @@ std::vector<std::size_t> Loader::get_candidate_path(
     return edges_indexes;
 }
 
-Demand Loader::get_demand(
-    const std::size_t demand_number, const std::size_t sim_iteration)
+Demand Loader::get_demand(const std::size_t demand_number)
 {
     std::string read_line;
     std::ifstream input_stream;
@@ -113,13 +113,11 @@ Demand Loader::get_demand(
         exit(EXIT_FAILURE);
     }
 
-    std::cout << "\nDemand path: " << demand_path;
-
     currently_read_line = 0;
 
     std::size_t source_id {0};
     std::size_t destination_id {0};
-    double bitrate {0.0};
+    double start_bitrate {0.0};
 
     while (getline(input_stream, read_line)) {
         if (currently_read_line == 0) {
@@ -128,16 +126,50 @@ Demand Loader::get_demand(
         else if (currently_read_line == 1) {
             destination_id = std::stoi(read_line);
         }
-        else if (currently_read_line == sim_iteration + 3) {
-            bitrate = std::stod(read_line);
+        else if (currently_read_line == 3) {
+            start_bitrate = std::stod(read_line);
             break;
         }
 
         currently_read_line++;
     }
 
-    return {source_id, destination_id, bitrate};
+    const auto assigned_route {
+        model_ref.get_route_between_vertices(source_id, destination_id, default_route_number)};
+
+    return {
+        demand_number,
+        source_id,
+        destination_id,
+        0.0,
+        start_bitrate,
+        assigned_route,
+        default_route_number,
+        nullptr};
 }
+
+void Loader::update_bitrate(Demand& demand, const std::size_t sim_iteration)
+{
+    std::string read_line;
+    std::ifstream input_stream;
+    std::string demand_path {
+        std::format("{}{}.txt", model_ref.model_params.demands_dir, demand.number)};
+    input_stream.open(demand_path);
+
+    if(!input_stream.is_open()) {
+        perror("Error opening file");
+        exit(EXIT_FAILURE);
+    }
+
+    currently_read_line = 0;
+
+    while (currently_read_line != sim_iteration + 4 && getline(input_stream, read_line))
+        currently_read_line++;
+
+    demand.previous_bitrate = demand.current_bitrate;
+    demand.current_bitrate = std::stod(read_line);
+}
+
 
 void Loader::update_model_params_strings(std::string& instance_path_copy)
 {

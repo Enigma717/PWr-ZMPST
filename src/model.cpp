@@ -1,7 +1,7 @@
-#include "../include/model.h"
-#include "../include/graph.h"
-#include "../include/utility_operators.h"
-#include "../include/structs/demand.h"
+#include "model.h"
+#include "graph.h"
+#include "utility_operators.h"
+#include "structs/demand.h"
 
 #include <algorithm>
 #include <iostream>
@@ -28,51 +28,95 @@ void Model::add_edge_to_base_graph(
     base_graph->add_edge(source_id, destination_id, weight);
 }
 
-std::vector<Edge> Model::get_path_between_vertices(
+Route Model::get_route_between_vertices(
     const std::size_t source_id,
-    const std::size_t destination_id)
+    const std::size_t destination_id,
+    const std::size_t path_number)
 {
     const auto indexes {
-        loader.get_candidate_path(source_id, destination_id, 30)};
+        loader.get_candidate_route(source_id, destination_id, path_number)};
 
-    std::vector<Edge> path;
-    path.reserve(indexes.size());
+    Route route;
+    route.reserve(indexes.size());
 
     for (const auto index : indexes)
-        path.push_back(base_graph->edges[index]);
+        route.push_back(&base_graph->edges[index]);
 
-    return path;
+    return route;
 }
 
-Demand Model::get_current_demand(const std::size_t demand_number)
+Demand Model::create_demand(const std::size_t demand_number)
 {
-    return loader.get_demand(demand_number, 5);
+    return loader.get_demand(demand_number);
 }
 
-std::vector<Edge> Model::get_sorted_path(std::vector<Edge> path, const std::size_t starting_vertex_id) const
+void Model::update_demand_bitrate(Demand& demand, std::size_t iteration)
 {
-    std::vector<Edge> sorted_path;
-    sorted_path.reserve(path.size());
+    loader.update_bitrate(demand, iteration);
+}
 
-    const auto& start_edge = std::find_if(
-        path.begin(),
-        path.end(),
-        [=] (const Edge& edge) {return edge.source->get_id() == starting_vertex_id;});
+Route Model::get_sorted_route(const Route& route, const std::size_t starting_vertex_id) const
+{
+    Route sorted_route;
+    sorted_route.reserve(route.size());
 
-    sorted_path.push_back(*start_edge);
+    const auto& start_edge {std::find_if(
+        route.begin(),
+        route.end(),
+        [=] (const Edge* edge) { return edge->source->get_id() == starting_vertex_id; })};
+
+    sorted_route.push_back(*start_edge);
 
     std::size_t index {0uz};
-    while (index < path.size() - 1) {
-        for (const auto& edge : path) {
-            if (sorted_path.back().destination->get_id() == edge.source->get_id()) {
-                sorted_path.push_back(edge);
+    while (index < route.size() - 1) {
+        for (const auto& edge : route) {
+            if (sorted_route.back()->destination->get_id() == edge->source->get_id()) {
+                sorted_route.push_back(edge);
                 index++;
                 break;
             }
         }
     }
 
-    return sorted_path;
+    return sorted_route;
+}
+
+void Model::update_data_on_demand_path(const Demand& demand)
+{
+    for (auto& edge : demand.assigned_route) {
+        auto twin_edge {find_twin_edge(edge)};
+
+        edge->bitrate -= demand.previous_bitrate;
+        edge->bitrate += demand.current_bitrate;
+        twin_edge->bitrate -= demand.previous_bitrate;
+        twin_edge->bitrate += demand.current_bitrate;
+    }
+}
+
+void Model::remove_demand_from_its_path(const Demand& demand)
+{
+    for (auto& edge : demand.assigned_route) {
+        auto twin_edge {find_twin_edge(edge)};
+
+        edge->bitrate -= demand.current_bitrate;
+        twin_edge->bitrate -= demand.current_bitrate;
+    }
+}
+
+Edge* Model::find_twin_edge(const Edge* const edge_on_path)
+{
+    return &*std::find_if(
+        base_graph->edges.begin(),
+        base_graph->edges.end(),
+        [=] (const Edge& edge) {
+            return edge.source == edge_on_path->destination
+                && edge.destination == edge_on_path->source;
+            });
+}
+
+std::size_t Model::solve()
+{
+    return solver.greedy_solution();
 }
 
 std::string Model::print_model_parms() const
@@ -85,31 +129,4 @@ std::string Model::print_model_parms() const
         << "\n|-> Demands dir: " << model_params.demands_dir;
 
     return stream.str();
-}
-
-std::string Model::print_path(std::vector<Edge> path) const
-{
-    std::stringstream stream;
-
-    const std::size_t size {path.size()};
-
-    for (std::size_t i {0uz}; i < size; i++) {
-        const auto& edge {path[i]};
-
-        stream << "("
-            << edge.source->get_id()
-            << ", "
-            << edge.destination->get_id()
-            << ")";
-
-        if (i != size - 1)
-            stream << " -> ";
-    }
-
-    return stream.str();
-}
-
-std::size_t Model::solve()
-{
-    return solver.greedy_solution();
 }

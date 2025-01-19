@@ -1,5 +1,5 @@
-#include "../include/graph.h"
-#include "../include/utility_operators.h"
+#include "graph.h"
+#include "utility_operators.h"
 
 #include <stack>
 #include <queue>

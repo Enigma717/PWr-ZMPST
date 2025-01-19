@@ -1,5 +1,5 @@
-#include "../include/edge.h"
-#include "../include/vertex.h"
+#include "edge.h"
+#include "vertex.h"
 
 #include <iostream>
 
