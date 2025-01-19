@@ -2,6 +2,7 @@
 
 #include "graph.h"
 #include "vertex.h"
+#include "enums/modulation.h"
 #include "structs/channel.h"
 #include "structs/demand.h"
 
@@ -9,6 +10,7 @@
 #include <ostream>
 #include <set>
 #include <vector>
+#include <list>
 
 inline std::ostream& operator<<(std::ostream& stream, const Vertex& vertex)
 {
@@ -50,14 +52,52 @@ inline std::ostream& operator<<(std::ostream& stream, const Route& route)
     return stream;
 }
 
+inline std::ostream& operator<<(std::ostream& stream, const std::list<Edge*>& edges)
+{
+    std::size_t i {0uz};
+
+    for (const auto edge : edges) {
+        stream << *edge;
+
+        if (i != edges.size() - 1)
+            stream << ", ";
+
+        i++;
+    }
+
+    return stream;
+}
+
+inline std::ostream& operator<<(std::ostream& stream, const ModulationType& modulation){
+    switch(modulation){
+    case ModulationType::QPSK:
+        return stream << "QPSK";
+        break;
+    case ModulationType::QAM8:
+        return stream << "QAM8";
+        break;
+    case ModulationType::QAM16:
+        return stream << "QAM16";
+        break;
+    case ModulationType::QAM32:
+        return stream << "QAM32";
+        break;
+    default:
+        return stream << "unknown";
+        break;
+    }
+}
+
 inline std::ostream& operator<<(std::ostream& stream, const Channel& channel)
 {
-    stream << "[f: " << channel.first_slot
+    stream << "[m: " << channel.modulation
+           << "\tf: " << channel.first_slot
            << " \ts: " << channel.size
+           << " \tmulti: " << channel.is_multi_channel
            << std::setprecision(10)
            << " \tm_b: " << channel.max_bitrate
            << " \tc_b: " << channel.current_bitrate
-           << " \te: " << channel.assigned_edge << "]";
+           << " \te: [" << channel.assigned_edges << "]";
 
     return stream;
 }
@@ -69,7 +109,7 @@ inline std::ostream& operator<<(std::ostream& stream, const Demand& demand)
            << std::setprecision(10)
            << " \tp_b: " << demand.previous_bitrate
            << " \tc_b: " << demand.current_bitrate
-           << " \tch: [" << demand.assigned_channel << "]"
+           << " \tch: [" << *demand.assigned_channel << "]"
            << " \tr_n: " << demand.assigned_route_number
            << " \tr: [" << demand.assigned_route << "]]";
 
@@ -124,9 +164,9 @@ inline std::ostream& operator<<(std::ostream& stream, const std::vector<Edge>& e
     const std::size_t size {edges.size()};
 
     for (std::size_t i {0uz}; i < size; i++) {
-        const auto& vertex {edges.at(i)};
+        const auto& edge {edges.at(i)};
 
-        stream << vertex;
+        stream << edge;
 
         if (i != size - 1)
             stream << ", ";
@@ -170,6 +210,18 @@ inline std::ostream& operator<<(std::ostream& stream, const std::vector<Demand>&
     }
 
     return stream;
+}
+
+inline bool operator==(const Channel& lhs, const Channel& rhs)
+{
+    return lhs.modulation == rhs.modulation
+        && lhs.is_multi_channel == rhs.is_multi_channel
+        && lhs.first_slot == rhs.first_slot
+        && lhs.size == rhs.size
+        && lhs.max_bitrate == rhs.max_bitrate
+        && lhs.current_bitrate == rhs.current_bitrate
+        && lhs.assigned_edges == rhs.assigned_edges;
+
 }
 
 inline bool operator<(const Vertex& lhs, const Vertex& rhs)

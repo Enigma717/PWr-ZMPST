@@ -3,6 +3,7 @@
 #include "enums/modulation.h"
 
 #include <cstdint>
+#include <list>
 
 class Edge;
 
@@ -13,5 +14,5 @@ struct Channel {
     std::size_t size {0uz};
     double max_bitrate {0.0};
     double current_bitrate {0.0};
-    Edge* assigned_edge {nullptr};
+    std::list<Edge*> assigned_edges {};
 };

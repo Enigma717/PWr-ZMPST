@@ -179,7 +179,7 @@ void Loader::update_model_params_strings(std::string& instance_path_copy)
 
     while (instance_path_copy.back() != '/')
         instance_path_copy.pop_back();
-    model_ref.model_params.demands_dir = instance_path_copy + "demands_0/";
+    model_ref.model_params.demands_dir = instance_path_copy + "demands_2/";
 }
 
 void Loader::parse_header(const std::string& read_line)

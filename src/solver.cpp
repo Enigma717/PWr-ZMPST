@@ -13,11 +13,12 @@ Solver::Solver(Model& model_ref) : model_ref{model_ref} {}
 
 std::size_t Solver::greedy_solution()
 {
-    auto demands {create_demands(100uz)};
+    auto demands {create_demands(50uz)};
 
     std::cout << "\nPATHS WITH APPLIED DEMANDS: [\n";
-    for (const auto& demand : demands)
+    for (auto& demand : demands)
         std::cout << demand.assigned_route << "\n";
+
     std::cout << "]";
 
 
@@ -74,12 +75,14 @@ std::size_t Solver::greedy_solution()
     std::cout << "]\n\n";
 
     for (auto& demand : demands) {
+        model_ref.update_demand_bitrate(demand, 187);
+        model_ref.update_data_on_demand_path(demand);
         create_or_update_channel(demand);
     }
 
     std::cout << "\n\n\nSLOTS IN EACH EDGE AFTER CREATING: [\n";
     for (const auto& edge : model_ref.base_graph->edges)
-        std::cout << "Edge " << edge << ": " << edge.spectrum_slots << "\n";
+        std::cout << "Edge " << &edge << ": slots address (" << &edge.spectrum_slots << ") " << edge.spectrum_slots << "\n";
     std::cout << "]\n\n";
 
 
@@ -88,7 +91,7 @@ std::size_t Solver::greedy_solution()
         std::cout << "\n\n--------[ Iteration: " << i << " ]--------\n\n";
 
         for (auto& demand : demands) {
-            model_ref.update_demand_bitrate(demand, i);
+            model_ref.update_demand_bitrate(demand, 187);
             model_ref.update_data_on_demand_path(demand);
         }
 
@@ -96,12 +99,37 @@ std::size_t Solver::greedy_solution()
         std::sort(demands.begin(), demands.end(), std::greater<Demand&>());
         std::cout << "\nDEMANDS AFTER SORTING: [\n" << demands << "]";
 
+        std::cout << "\n\nExisting channels: [\n";
+        for (const auto& channel : channels)
+            std::cout << "Channel: [" << channel << "]\n";
+
         std::cout << "\nPATHS WITH UPDATED DEMANDS: [\n";
         for (const auto& demand : demands)
             std::cout << demand.assigned_route << "\n";
         std::cout << "]\n";
+
+        std::cout << "\n\n\nSLOTS IN EACH EDGE : [\n";
+        for (const auto& edge : model_ref.base_graph->edges)
+            std::cout << "Edge " << edge << ": " << edge.spectrum_slots << "\n";
+        std::cout << "]\n\n";
     }
 
+    // for (auto& demand : demands) {
+    //     remove_channel(demand);
+
+    //     std::cout << "\n\n\nExisting channels: [\n";
+    //     for (const auto& channel : channels)
+    //         std::cout << "Channel: [" << channel << "]\n";
+
+    //     channels.remove(*demand.assigned_channel);
+
+    //     std::cout << "\n\n\nSLOTS IN EACH EDGE AFTER REMOVING: [\n";
+    //     for (const auto& edge : model_ref.base_graph->edges)
+    //         std::cout << "Edge " << edge << ": slots " << edge.spectrum_slots << "\n";
+    //     std::cout << "]\n\n";
+    // }
+
+    std::cout << "\n\n\nTOTAL NUMBER OF CHANNELS: " << channels.size();
 
     return 0uz;
 }
@@ -116,7 +144,7 @@ std::vector<Demand> Solver::create_demands(const std::size_t demands_count) cons
         demands.push_back(model_ref.create_demand(i));
 
     std::sort(demands.begin(), demands.end(), std::greater<Demand&>());
-    std::cout << "\nDEMANDS: [\n" << demands << "]";
+    // std::cout << "\nDEMANDS: [\n" << demands << "]";
 
     for (const auto& demand : demands)
         model_ref.update_data_on_demand_path(demand);
@@ -126,18 +154,50 @@ std::vector<Demand> Solver::create_demands(const std::size_t demands_count) cons
 
 void Solver::create_or_update_channel(Demand& demand)
 {
-    if (!demand.assigned_channel) {
-        channels.push_back(deduce_best_channel_type(demand));
-        demand.assigned_channel = &channels.back();
+    channels.emplace_back(deduce_best_channel_type(demand));
+    demand.assigned_channel = &channels.back();
+
+    for (auto edge : demand.assigned_route) {
+        edge->assigned_channels.push_back(demand.assigned_channel);
+        demand.assigned_channel->assigned_edges.push_back(edge);
     }
+}
+
+void Solver::remove_channel(Demand& demand)
+{
+    const auto channel {demand.assigned_channel};
+
+    for (auto& edge : demand.assigned_route) {
+        auto twin_edge {model_ref.find_twin_edge(edge)};
+
+        std::fill(
+            edge->spectrum_slots.begin() + channel->first_slot,
+            edge->spectrum_slots.begin() + channel->first_slot + channel->size,
+            false);
+
+        std::fill(
+            twin_edge->spectrum_slots.begin() + channel->first_slot,
+            twin_edge->spectrum_slots.begin() + channel->first_slot + channel->size,
+            false);
+    }
+
+    model_ref.remove_demand_from_its_path(demand);
+    channels.remove(*demand.assigned_channel);
 }
 
 Channel Solver::deduce_best_channel_type(Demand& demand) const
 {
-    bool channel_found {false};
 
-    while (!channel_found) {
-        std::cout << "\nCURRENT DEMAND ROUTE: " << demand.assigned_route << "\n";
+    ModulationType channel_modulation;
+    bool is_multi_channel_needed;
+    std::size_t channel_size;
+    std::size_t channel_first_slot;
+    double channel_max_bitrate;
+
+    bool is_channel_created {false};
+
+    while (!is_channel_created) {
+        // std::cout << "\nCURRENT DEMAND ROUTE: " << demand.assigned_route << "\n";
 
         const auto total_route_distance {
             std::accumulate(
@@ -146,17 +206,35 @@ Channel Solver::deduce_best_channel_type(Demand& demand) const
                 0uz,
                 [] (const std::size_t sum, const Edge* edge) { return sum + edge->weight; })};
 
-        std::cout << "\nMAX DISTANCE IN PATH: " << total_route_distance;
+        std::cout << "\n=======================\n\nMAX DISTANCE IN PATH: " << total_route_distance;
 
-        ModulationType channel_modulation;
-        std::size_t channel_size;
-        std::size_t channel_start_slot;
-        double channel_max_bitrate;
-
-        if (total_route_distance <= 20000uz) {
+        if (total_route_distance <= 200uz) {
             channel_modulation = ModulationType::QAM32;
+            is_multi_channel_needed = false;
             channel_size = 9uz;
             channel_max_bitrate = 800.0;
+        }
+        else if (total_route_distance <= 1600uz) {
+            channel_modulation = ModulationType::QAM16;
+            is_multi_channel_needed = false;
+            channel_size = 9uz;
+            channel_max_bitrate = 600.0;
+        }
+        else if (total_route_distance > 1600uz) {
+            channel_modulation = ModulationType::QAM8;
+
+            if (demand.current_bitrate > 400.0) {
+                std::size_t channels_needed {static_cast<std::size_t>(demand.current_bitrate / 400.0) + 1uz};
+
+                is_multi_channel_needed = true;
+                channel_size = channels_needed * 9uz;
+                channel_max_bitrate = channels_needed * 400.0;
+            }
+            else {
+                is_multi_channel_needed = false;
+                channel_size = 9uz;
+                channel_max_bitrate = 400.0;
+            }
         }
 
         const auto start_slot {find_first_free_slot(demand.assigned_route, channel_size)};
@@ -172,14 +250,28 @@ Channel Solver::deduce_best_channel_type(Demand& demand) const
             model_ref.update_data_on_demand_path(demand);
         }
         else {
-            channel_start_slot = start_slot;
-            std::cout << "\nCHANNEL START SLOT: " << channel_start_slot << "\n";
-            channel_found = true;
+            channel_first_slot = start_slot;
+            std::cout << "\nCHANNEL START SLOT: " << channel_first_slot << "\n";
+            is_channel_created = true;
         }
     }
 
 
-    return {};
+    std::cout << "\n\nDEMAND BITRATE: " << demand.current_bitrate;
+    std::cout << "\n\n\nCHANNEL SUCCESSFULLY CREATED: ["
+        << "\nmodulation: " << channel_modulation
+        << "\nmulti_channel: " << is_multi_channel_needed
+        << "\nstart: " << channel_first_slot
+        << "\nsize: " << channel_size
+        << "\nmax_bitrate: " << channel_max_bitrate  << "]\n";
+
+    return {
+        channel_modulation,
+        is_multi_channel_needed,
+        channel_first_slot,
+        channel_size,
+        channel_max_bitrate,
+        0.0};
 }
 
 int Solver::find_first_free_slot(

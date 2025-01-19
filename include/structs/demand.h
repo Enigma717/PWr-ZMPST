@@ -1,5 +1,7 @@
 #pragma once
 
+#include "structs/channel.h"
+
 #include <cstdint>
 #include <vector>
 
