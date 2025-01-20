@@ -37,7 +37,7 @@ public:
     double solve(const std::size_t demands_count);
     std::string print_model_parms() const;
 
-public:
+private:
     ModelParams model_params;
     Loader loader;
     std::unique_ptr<Graph> base_graph;

@@ -16,6 +16,8 @@ public:
     Solver(Model& model_ref);
 
     double greedy_solution(const std::size_t demands_count);
+
+private:
     std::vector<Demand> create_demands(const std::size_t demands_count) const;
     void assign_channel(Demand& demand);
     std::set<Channel*> check_for_grooming(Demand& demand) const;
@@ -26,9 +28,6 @@ public:
     int find_first_free_slot(
         const Route& route, const std::size_t channel_size) const;
 
-
     std::list<Channel> channels;
-
-private:
     Model& model_ref;
 };

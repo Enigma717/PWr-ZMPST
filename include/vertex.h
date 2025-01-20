@@ -14,7 +14,7 @@ public:
     const std::set<Vertex*>& get_neighbours() const;
     void update_neighbourship_with(Vertex& new_neighbour);
 
-// private:
+private:
     std::size_t id {0uz};
     std::set<Vertex*> neighbours;
 };

@@ -14,7 +14,6 @@ public:
     Edge() = delete;
     Edge(Vertex& source, Vertex& destination, const std::size_t weight);
 
-// private:
     Vertex* source;
     Vertex* destination;
     std::size_t weight {0uz};

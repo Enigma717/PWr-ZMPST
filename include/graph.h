@@ -17,7 +17,6 @@ public:
         const std::size_t destination_id,
         const std::size_t weight);
 
-public:
     std::vector<Vertex> vertices;
     std::vector<Edge> edges;
 };
