@@ -8,27 +8,54 @@ int main(int argc, char* argv[])
 {
     Model model;
 
-    std::string instance_path {"./instances/POL12/pol12.net"};
-    // std::string instance_path {"./instances/US26/us26.net"};
-    model.load_file(instance_path);
+    if (argc < 4) {
+        std::cerr << "\nMissing arguments:";
+        std::cerr << "\nProper usage: ./zmpst <instance type [POL/US]> <demands directory [0-9]> <number of demands [1-500]>\n\n";
+
+        return 1;
+    }
+
+    std::string instance_path {};
+
+    if (std::string(argv[1]) == "POL") {
+        instance_path = "./instances/POL12/pol12.net";
+    }
+    else if (std::string(argv[1]) == "US") {
+        instance_path = "./instances/US26/us26.net";
+    }
+    else {
+        std::cerr << "\nInstance type is invalid, proper values are \"POL\" or \"US\"";
+        return 1;
+    }
+
+
+    std::string demands_dir {};
+
+    if (std::stoi(argv[2]) < 0 && std::stoi(argv[2]) > 9) {
+        std::cerr << "\nDemands directory number is invalid, proper values are [0-9]";
+        return 1;
+    }
+    else {
+        demands_dir = std::string(argv[2]);
+    }
+
+    std::size_t demands_count {static_cast<std::size_t>(std::atoi(argv[3]))};
+
+    if (demands_count < 1 && demands_count > 500) {
+        std::cerr << "\nNumber of demands is invalid, proper values are [1-500]";
+        return 1;
+    }
+
+
+    model.load_file(instance_path, demands_dir);
 
     std::cout << "\n\n========[ Instance ]========\n\n";
     std::cout << model.print_model_parms();
 
-    std::cout << "\n\n========[ Neighbours ]========\n\n";
-    for (const auto& vertex : model.base_graph->vertices)
-        std::cout << vertex.print_neighbours();
+    double result {model.solve(demands_count)};
 
-    std::cout << "\n\n========[ Edges ]========\n\n";
-    const auto& edges {model.base_graph->edges};
-    std::cout << edges;
+    std::cout << "\n\nFinal result: " << result << " used transceivers on average\n\n";
 
-    model.solve();
-
-    std::cout << "\n\n==============================\n\n";
-    std::cout << model.base_graph->print_edges_for_vertices();
-
-    std::cout << "\n\n==============================\n\n";
 
     return 0;
 }

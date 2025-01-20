@@ -16,6 +16,5 @@ public:
 
 // private:
     std::size_t id {0uz};
-    std::size_t transcievers {0uz};
     std::set<Vertex*> neighbours;
 };

@@ -7,7 +7,7 @@
 class Vertex;
 class Channel;
 
-using SpectrumSlots = std::array<bool, 100>;
+using SpectrumSlots = std::array<bool, 320>;
 
 class Edge {
 public:

@@ -17,9 +17,6 @@ public:
         const std::size_t destination_id,
         const std::size_t weight);
 
-    void BFS(const std::size_t starting_vertex_id);
-    void DFS(const std::size_t starting_vertex_id);
-
 public:
     std::vector<Vertex> vertices;
     std::vector<Edge> edges;

@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <list>
+#include <set>
 #include <vector>
 
 class Model;
@@ -14,11 +15,14 @@ public:
     Solver() = delete;
     Solver(Model& model_ref);
 
-    std::size_t greedy_solution();
+    double greedy_solution(const std::size_t demands_count);
     std::vector<Demand> create_demands(const std::size_t demands_count) const;
-    void create_or_update_channel(Demand& demand);
+    void assign_channel(Demand& demand);
+    std::set<Channel*> check_for_grooming(Demand& demand) const;
+    Channel create_new_channel(Demand& demand) const;
+    void remove_demand_from_channel(Demand& demand);
     void remove_channel(Demand& demand);
-    Channel deduce_best_channel_type(Demand& demand) const;
+
     int find_first_free_slot(
         const Route& route, const std::size_t channel_size) const;
 

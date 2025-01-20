@@ -21,11 +21,9 @@ inline std::ostream& operator<<(std::ostream& stream, const Vertex& vertex)
 
 inline std::ostream& operator<<(std::ostream& stream, const Edge& edge)
 {
-    stream << std::left
-        << "(s:" << *edge.source
-        << ", d:" << *edge.destination
-        << ", w:" << edge.weight
-        << ", b:" << edge.bitrate << ")";
+    stream << "(" << edge.source->get_id()
+        << ", " << edge.destination->get_id()
+        << ")";
 
     return stream;
 }
@@ -41,9 +39,7 @@ inline std::ostream& operator<<(std::ostream& stream, const Route& route)
             << edge->source->get_id()
             << ", "
             << edge->destination->get_id()
-            << ", ["
-            << edge->bitrate
-            << "])";
+            << ")";
 
         if (i != size - 1)
             stream << " -> ";
@@ -109,7 +105,7 @@ inline std::ostream& operator<<(std::ostream& stream, const Demand& demand)
            << std::setprecision(10)
            << " \tp_b: " << demand.previous_bitrate
            << " \tc_b: " << demand.current_bitrate
-           << " \tch: [" << *demand.assigned_channel << "]"
+           << " \tch: [" << demand.assigned_channel << "]"
            << " \tr_n: " << demand.assigned_route_number
            << " \tr: [" << demand.assigned_route << "]]";
 
@@ -188,9 +184,9 @@ inline std::ostream& operator<<(std::ostream& stream, const std::set<Vertex*>& n
     return stream;
 }
 
-inline std::ostream& operator<<(std::ostream& stream, const std::vector<Route>& paths)
+inline std::ostream& operator<<(std::ostream& stream, const std::vector<Route>& routes)
 {
-    for (const auto& route : paths)
+    for (const auto& route : routes)
         stream << "\n|-> [" << route << "]";
 
     return stream;
@@ -231,7 +227,7 @@ inline bool operator<(const Vertex& lhs, const Vertex& rhs)
 
 inline bool operator>(const Demand& lhs, const Demand& rhs)
 {
-    return lhs.current_bitrate > rhs.current_bitrate;
+    return lhs.assigned_route.size() > rhs.assigned_route.size();
 }
 
 inline std::ostream& operator<<(std::ostream& stream, const Graph& graph)

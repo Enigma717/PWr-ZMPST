@@ -13,7 +13,8 @@ public:
     Loader() = delete;
     Loader(Model& model_ref);
 
-    void parse_instance(const std::string& instance_path);
+    void parse_instance(
+        const std::string& instance_path, const std::string& demands_dir_number);
     std::vector<std::size_t> get_candidate_route(
         const std::size_t source_id,
         const std::size_t destination_id,
@@ -22,7 +23,8 @@ public:
     void update_bitrate(Demand& demand, const std::size_t sim_iteration);
 
 private:
-    void update_model_params_strings(std::string& instance_path_copy);
+    void update_model_params_strings(
+        std::string& instance_path_copy, const std::string& demands_dir_number);
     void parse_header(const std::string& read_line);
     void parse_distances_matrix(const std::string& read_line);
 

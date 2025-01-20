@@ -15,7 +15,8 @@ class Model {
 public:
     Model();
 
-    void load_file(const std::string& file_path);
+    void load_file(
+        const std::string& instance_path, const std::string& demands_dir);
     void create_base_graph();
     void add_edge_to_base_graph(
         const std::size_t source_id,
@@ -29,14 +30,11 @@ public:
     Demand create_demand(const std::size_t demand_number);
     void update_demand_bitrate(Demand& demand, std::size_t iteration);
 
-    Route get_sorted_route(
-        const Route& route,
-        const std::size_t starting_vertex_id) const;
-    void update_data_on_demand_path(const Demand& demand);
-    void remove_demand_from_its_path(const Demand& demand);
-    Edge* find_twin_edge(const Edge* const edge_on_path);
+    void update_data_in_demand_route(const Demand& demand);
+    void update_data_in_demand_channel(const Demand& demand);
+    void remove_demand_from_its_route(const Demand& demand);
 
-    std::size_t solve();
+    double solve(const std::size_t demands_count);
     std::string print_model_parms() const;
 
 public:

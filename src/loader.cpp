@@ -32,7 +32,8 @@ namespace
 
 Loader::Loader(Model& model_ref) : model_ref{model_ref} {}
 
-void Loader::parse_instance(const std::string& instance_path)
+void Loader::parse_instance(
+    const std::string& instance_path, const std::string& demands_dir_number)
 {
     std::string read_line;
     std::ifstream input_stream;
@@ -46,7 +47,7 @@ void Loader::parse_instance(const std::string& instance_path)
     }
 
     std::string instance_path_copy {instance_path};
-    update_model_params_strings(instance_path_copy);
+    update_model_params_strings(instance_path_copy, demands_dir_number);
 
     currently_read_line = 0;
 
@@ -92,10 +93,8 @@ std::vector<std::size_t> Loader::get_candidate_route(
     edges_indexes.reserve(tokens.size());
 
     for (std::size_t index {0uz}; index < tokens.size(); index++)
-    {
         if (tokens[index] == "1")
             edges_indexes.push_back(index);
-    }
 
     return edges_indexes;
 }
@@ -171,7 +170,8 @@ void Loader::update_bitrate(Demand& demand, const std::size_t sim_iteration)
 }
 
 
-void Loader::update_model_params_strings(std::string& instance_path_copy)
+void Loader::update_model_params_strings(
+    std::string& instance_path_copy, const std::string& demands_dir_number)
 {
     while (instance_path_copy.back() != '.')
         instance_path_copy.pop_back();
@@ -179,7 +179,7 @@ void Loader::update_model_params_strings(std::string& instance_path_copy)
 
     while (instance_path_copy.back() != '/')
         instance_path_copy.pop_back();
-    model_ref.model_params.demands_dir = instance_path_copy + "demands_2/";
+    model_ref.model_params.demands_dir = instance_path_copy + "demands_" + demands_dir_number + "/";
 }
 
 void Loader::parse_header(const std::string& read_line)
